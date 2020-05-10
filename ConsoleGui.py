@@ -114,7 +114,7 @@ def getInt(question):
 # checks if there are no errors in answers
 def noErrorsInValues(inp_ansIterable):
     if type(inp_ansIterable) == type(list()):
-        for ans in list:
+        for ans in inp_ansIterable:
             if str(ans) == 'ERROR' or str(ans) == '-1':
                 return False
     else:
@@ -122,17 +122,24 @@ def noErrorsInValues(inp_ansIterable):
             if str(item(1)) == 'ERROR' or str(item(1)) == '-1':
                 return False
 
-
-
 def replaceErrorForNone(inp_ansIterable):
     if type(inp_ansIterable) == type(list()):
-        for ans in list:
+        for ans in inp_ansIterable:
             if str(ans) == 'ERROR' or str(ans) == '-1':
                 ans = 'None'
     else:
         for item in inp_ansIterable.items():
             if str(item[1]) == 'ERROR' or str(item[1]) == '-1':
                 item[1] = 'None'
+
+def listElements(inp_elementIterable):
+    if type(inp_elementIterable) == type(list()):
+        for element in inp_elementIterable:
+            element.list()
+    else:
+        for item in inp_elementIterable.items():
+                item[1].list()
+
 
 class Element(ABC):
 
@@ -180,6 +187,8 @@ def getDictOfValuesByMultipleChoice(question, *inp_valueLists):
             # m = multipleChoice with varargs used as options
             # i = getInt
         # valueList[1] will be the value name that will be used as a key in the dict
+        # list the question type for later altering
+        questionTypeList.append(valueList[0])
 
         if valueList[0] == 'o':
             # openQuestion
@@ -195,6 +204,9 @@ def getDictOfValuesByMultipleChoice(question, *inp_valueLists):
             valsDict[valueList[1]] = openQuestionChecked(question + ' ' + valueList[1], valueList[2:])
         else:
             raise Exception('getDictOfValuesByMultipleChoice() encountered invalid question form')
+
+    replaceErrorForNone(valsDict)
+
 
 
 
