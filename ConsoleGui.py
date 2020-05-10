@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 
 # method to clear the terminal
@@ -111,7 +112,7 @@ def getInt(question):
             print("that is not a valid answer, try again or type exit to exit")
 
 # checks if there are no errors in answers #TODO write method
-def noErrorsInValues(self):
+def noErrorsInValues():
     pass
 
 class Element(ABC):
@@ -142,6 +143,37 @@ def getElementByMultipleChoice(question, input):
         return getElementByMultipleChoice(question, list(input.values()))
     else:
         print("ERROR: not a valid iterable for multiplechoice")
+
+# get values bij vararg list, first element in list is the value, additional elements are options for if the question should be a multiple choice
+# question will be recycled for every value
+# answers will be strings
+def getDictOfValuesByMultipleChoice(question, *inp_valueLists):
+    valsDict = dict()
+
+    for valueList in inp_valueLists:
+        # valueList[0] will be type of question:
+            # o = openQuestion,
+            # c = openQuestionChecked with varargs used as checks,
+            # m = multipleChoice with varargs used as options
+            # i = getInt
+        # valueList[1] will be the value name that will be used as a key in the dict
+
+        if valueList[0] == 'o':
+            # openQuestion
+            valsDict[valueList[1]] = openQuestion(question + ' ' + valueList[1])
+        elif valueList[0] == 'm':
+            # multipleChoice
+            valsDict[valueList[1]] = multipleChoice(question + ' ' + valueList[1], valueList[2:])
+        elif valueList[0] == 'c':
+            # openQuestionChecked
+            valsDict[valueList[1]] = openQuestionChecked(question + ' ' + valueList[1], valueList[2:])
+        elif valueList[0] == 'i':
+            # getInt
+            valsDict[valueList[1]] = openQuestionChecked(question + ' ' + valueList[1], valueList[2:])
+        else:
+            raise Exception('getDictOfValuesByMultipleChoice() encountered invalid question form')
+
+
 
 class Class(Element, ABC):
 
@@ -194,11 +226,33 @@ class StateEngine:
             return self.desc
 
     # static state variables
+    safeState = None
     stateStack = []
     currentState = None
     running = False
 
+    # currentState will be set to this state when an unexpected end of the stateStack hes been found
+    @staticmethod
+    def setSafeState(inp_safeState):
+        StateEngine.stateStack.clear()
+        StateEngine.safeState = inp_safeState
 
+    # goes back one state in the stack
+    @staticmethod
+    def getPreviousState():
+        if StateEngine.stateStack:
+            return StateEngine.stateStack.pop()
+        elif StateEngine.safeState:
+            warnings.warn("defaulted to safeState")
+            return StateEngine.safeState
+        else:
+            StateEngine.stop()
+            raise Exception('Unexpected end of stateStack in getPreviousState (no safeState set)')
+
+    # push state to stack without executing it
+    @staticmethod
+    def pushStateToStack(inp_state):
+        StateEngine.stateStack.append(inp_state)
 
     # starts the state engine
     @staticmethod
@@ -221,14 +275,21 @@ class StateEngine:
         if not StateEngine.running:
             StateEngine.start()
 
-    def setStateToPrevious(self):
-        if StateEngine.stateStack:
-            StateEngine.setState(StateEngine.stateStack.pop(), stacked=False)
-
-
+    # go to previous stacked state
     @staticmethod
-    def setStateByMultipleChoice(question, *states):
-        StateEngine.setState(states[multipleChoice(question, [str(state[0]) + state[1].getDescription() for state in enumerate(states)])])
+    def setStateToPrevious():
+        StateEngine.setState(StateEngine.getPreviousState(), stacked=False)
+
+    # prompt user with a multiple choice of state descriptions
+    @staticmethod
+    def setStateByMultipleChoice(question, default, *states):
+        index = multipleChoice(question, [str(state[0]) + state[1].getDescription() for state in enumerate(states)])
+        if index is not -1:
+            StateEngine.setState(states[index])
+        elif default:
+            StateEngine.setState(default)
+        else:
+            StateEngine.setState(StateEngine.getPreviousState())
 
 class DataManager:
     # dict that holds all dicts of registered objects accessed by key:

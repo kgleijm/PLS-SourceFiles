@@ -173,14 +173,32 @@ def stateExit():
     StateEngine.stop()
 STATE_EXIT = State(stateExit, 'Exit')
 
+def stateCreateAccount():
+    values = cg.getDictOfValuesByMultipleChoice(
+        'please enter your',
+        ['m', 'gender', '1Man', '2Woman', '3Other'],
+        ['o', 'name'],
+        ['o', 'surname'],
+        ['o', 'street and house number'],
+        ['o', 'postal code'],
+        ['o', 'city'],
+        ['c', 'email', '@', '.'],
+        ['o', 'userName'],
+        ['i', 'telephoneNumber']
+        )
+
+STATE_CREATE_ACCOUNT = State(stateCreateAccount, 'create an account')
 
 def stateMain():
     global gActiveUser
     if gActiveUser is not None:
         gActiveUser = None
-    StateEngine.setStateByMultipleChoice("What would you like to do?", STATE_LOG_IN, STATE_EXIT)
+    StateEngine.setStateByMultipleChoice("What would you like to do?", STATE_EXIT, STATE_LOG_IN, STATE_CREATE_ACCOUNT)
 STATE_MAIN = State(stateMain, "Home")
+
+
 
 # Main
 ImportExportManager.setup()
+StateEngine.setSafeState(STATE_MAIN)
 StateEngine.setState(STATE_MAIN)
