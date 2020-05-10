@@ -1,5 +1,9 @@
 from abc import ABC, abstractmethod
 
+# method to clear the terminal
+def clearTerminal():
+    print("\n" * 100)
+
 #   method that will create a choice dialog
 def openQuestionChecked(question, checks=None, negativeResponse=None):
 
@@ -175,7 +179,7 @@ class Class(Element, ABC):
         return output
 
 class StateEngine:
-    # class thate contains an action and description of the state to
+    # class that contains an action and description of the state to
     # minimize boilerplate code
     class State:
 
@@ -189,8 +193,12 @@ class StateEngine:
         def getDescription(self):
             return self.desc
 
+    # static state variables
+    stateStack = []
     currentState = None
     running = False
+
+
 
     # starts the state engine
     @staticmethod
@@ -206,10 +214,17 @@ class StateEngine:
 
     #  set new state
     @staticmethod
-    def setState(newState):
+    def setState(newState, stacked=True):
         StateEngine.currentState = newState
+        if stacked:
+            StateEngine.stateStack.append(newState)
         if not StateEngine.running:
             StateEngine.start()
+
+    def setStateToPrevious(self):
+        if StateEngine.stateStack:
+            StateEngine.setState(StateEngine.stateStack.pop(), stacked=False)
+
 
     @staticmethod
     def setStateByMultipleChoice(question, *states):
@@ -227,6 +242,7 @@ class DataManager:
         if inp_type in DataManager.typeDict:
             DataManager.typeDict[inp_type][str(key)] = inp_element
         else:
+            print('data type: ' + str(inp_type) + 'added to DataManager')
             DataManager.typeDict[inp_type] = dict()
             DataManager.typeDict[inp_type][str(key)] = inp_element
         inp_element.setKey(str(key))
@@ -251,6 +267,7 @@ class DataManager:
     @staticmethod
     def ChooseElementInDictOfTypeFrom(question, inp_element):
         inp_type = type(inp_element)
+        print('Datamanager tries to make a list of: ' + str(inp_type))
         if inp_type in DataManager.typeDict:
             return getElementByMultipleChoice(question, DataManager.typeDict[inp_type])
         else:

@@ -21,18 +21,18 @@ def saveJsonAtPath(path, filename, outputJson):
 # get csv from web or path method
 def getCsvAsList(adress, delimiter):
     output = list()
-    print('\n')
-    print('try to get csv from local path: ' + adress)
+    # print('\n')
+    # print('try to get csv from local path: ' + adress)
     f = open(adress, 'r')
     reader = csv.reader(f, delimiter=delimiter)
     for row in reader:
-        print('found row:' + str(row))
+        # print('found row:' + str(row))
         thisRow = list()
         for e in row:
             thisRow.append(e)
         output.append(thisRow)
     f.close()
-    print('\n')
+    # print('\n')
     return output
 
 # save csv at path method
@@ -108,5 +108,3 @@ def getFolderByName(basePath, folder):
     print('folder not found')
     return None
 
-def clearTerminal():
-    print("\n" * 100)
