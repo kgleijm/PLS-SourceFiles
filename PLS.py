@@ -174,6 +174,13 @@ def stateExit():
 STATE_EXIT = State(stateExit, 'Exit')
 
 def stateCreateAccount():
+    mock = cg.getDictOfValuesByMultipleChoice(
+        'please enter your',
+        ['o', 'name'],
+        ['o', 'surname'],
+        ['o', 'street and house number']
+    )
+
     values = cg.getDictOfValuesByMultipleChoice(
         'please enter your',
         ['m', 'gender', '1Man', '2Woman', '3Other'],

@@ -140,6 +140,10 @@ def listElements(inp_elementIterable):
         for item in inp_elementIterable.items():
                 item[1].list()
 
+def listDict(inp_dict):
+    for item in inp_dict.items():
+        print(str(item[0]) + ': ' + str(item[1]))
+
 
 class Element(ABC):
 
@@ -178,8 +182,12 @@ def getDictOfValuesByMultipleChoice(question, *inp_valueLists):
     valsDict = dict()
     # list to hold type of question
     questionTypeList = list()
+    questionList = list()
+    additionalParametersList = list()
+    keyList = list()
 
     # entering initial values
+    index = 0
     for valueList in inp_valueLists:
         # valueList[0] will be type of question:
             # o = openQuestion,
@@ -187,25 +195,67 @@ def getDictOfValuesByMultipleChoice(question, *inp_valueLists):
             # m = multipleChoice with varargs used as options
             # i = getInt
         # valueList[1] will be the value name that will be used as a key in the dict
-        # list the question type for later altering
-        questionTypeList.append(valueList[0])
 
-        if valueList[0] == 'o':
-            # openQuestion
-            valsDict[valueList[1]] = openQuestion(question + ' ' + valueList[1])
-        elif valueList[0] == 'm':
-            # multipleChoice
-            valsDict[valueList[1]] = multipleChoice(question + ' ' + valueList[1], valueList[2:])
-        elif valueList[0] == 'c':
-            # openQuestionChecked
-            valsDict[valueList[1]] = openQuestionChecked(question + ' ' + valueList[1], valueList[2:])
-        elif valueList[0] == 'i':
-            # getInt
-            valsDict[valueList[1]] = openQuestionChecked(question + ' ' + valueList[1], valueList[2:])
+        # no additional parameters:
+        if len(valueList) == 2:
+            # question with no additional parameters
+            if valueList[0] == 'o':
+                # openQuestion
+                valsDict[valueList[1]] = openQuestion(question + ' ' + valueList[1])
+            elif valueList[0] == 'i':
+                # getInt
+                valsDict[valueList[1]] = getInt(question + ' ' + valueList[1])
+            else:
+                raise Exception('getDictOfValuesByMultipleChoice() encountered invalid question form')
+            additionalParametersList.append([])
+        elif len(valueList) >= 2:
+            #  additional parameters
+            if valueList[0] == 'm':
+                # multipleChoice
+                valsDict[valueList[1]] = multipleChoice(question + ' ' + valueList[1], valueList[2:])
+            elif valueList[0] == 'c':
+                # openQuestionChecked
+                valsDict[valueList[1]] = openQuestionChecked(question + ' ' + valueList[1], valueList[2:])
+            else:
+                raise Exception('getDictOfValuesByMultipleChoice() encountered invalid question form')
+            additionalParametersList.append(valueList[2:])
         else:
             raise Exception('getDictOfValuesByMultipleChoice() encountered invalid question form')
 
-    replaceErrorForNone(valsDict)
+        questionTypeList.append(valueList[0])
+        questionList.append(str(index) + valueList[1])
+        keyList.append(valueList[1])
+        index += 1
+
+    # altering values if necessary
+    while True:
+        replaceErrorForNone(valsDict)
+        listDict(valsDict)
+        ans = multipleChoice('is this information correct?', 'yyes', 'nno')
+        if ans == -1:
+            StateEngine.setStateToPrevious()
+        elif ans == 0:
+            return valsDict
+        else:
+            index = multipleChoice("what do you want to change?", questionList)
+            questionType = questionTypeList[index]
+            key = keyList[index]
+            additionalParameters = additionalParametersList[index]
+
+            if questionType == 'o':
+                # openQuestion
+                valsDict[key] = openQuestion(question + ' ' + key)
+            elif questionType == 'm':
+                # multipleChoice
+                valsDict[key] = multipleChoice(question + ' ' + key, additionalParameters)
+            elif questionType == 'c':
+                # openQuestionChecked
+                valsDict[key] = openQuestionChecked(question + ' ' + key, additionalParameters)
+            elif questionType == 'i':
+                # getInt
+                valsDict[key] = getInt(question + ' ' + key)
+            else:
+                raise Exception('getDictOfValuesByMultipleChoice() encountered invalid question form')
 
 
 
