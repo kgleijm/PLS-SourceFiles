@@ -111,9 +111,28 @@ def getInt(question):
         except:
             print("that is not a valid answer, try again or type exit to exit")
 
-# checks if there are no errors in answers #TODO write method
-def noErrorsInValues():
-    pass
+# checks if there are no errors in answers
+def noErrorsInValues(inp_ansIterable):
+    if type(inp_ansIterable) == type(list()):
+        for ans in list:
+            if str(ans) == 'ERROR' or str(ans) == '-1':
+                return False
+    else:
+        for item in inp_ansIterable.items():
+            if str(item(1)) == 'ERROR' or str(item(1)) == '-1':
+                return False
+
+
+
+def replaceErrorForNone(inp_ansIterable):
+    if type(inp_ansIterable) == type(list()):
+        for ans in list:
+            if str(ans) == 'ERROR' or str(ans) == '-1':
+                ans = 'None'
+    else:
+        for item in inp_ansIterable.items():
+            if str(item[1]) == 'ERROR' or str(item[1]) == '-1':
+                item[1] = 'None'
 
 class Element(ABC):
 
@@ -148,8 +167,12 @@ def getElementByMultipleChoice(question, input):
 # question will be recycled for every value
 # answers will be strings
 def getDictOfValuesByMultipleChoice(question, *inp_valueLists):
+    # dict to hold values
     valsDict = dict()
+    # list to hold type of question
+    questionTypeList = list()
 
+    # entering initial values
     for valueList in inp_valueLists:
         # valueList[0] will be type of question:
             # o = openQuestion,
@@ -172,6 +195,7 @@ def getDictOfValuesByMultipleChoice(question, *inp_valueLists):
             valsDict[valueList[1]] = openQuestionChecked(question + ' ' + valueList[1], valueList[2:])
         else:
             raise Exception('getDictOfValuesByMultipleChoice() encountered invalid question form')
+
 
 
 
