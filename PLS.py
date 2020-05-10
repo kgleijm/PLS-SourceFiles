@@ -6,6 +6,7 @@ import jcsvHandler as jcsv
 # tools
 DataManager = cg.DataManager
 StateEngine = cg.StateEngine
+State = StateEngine.State
 
 # globals
 gActiveUser = None
@@ -160,19 +161,26 @@ class User(cg.Element):
         return User(None, None, None, None, None, None, None, None, None, None)
 
 
+
 # states
 def stateLogin():
+    print("STATE_LOG_IN")
+STATE_LOG_IN = State(stateLogin, 'Log In')
+
+
+def stateExit():
+    print("shutting down, Bye bye!")
+    StateEngine.stop()
+STATE_EXIT = State(stateExit, 'Exit')
+
+
+def stateMain():
     global gActiveUser
     if gActiveUser is not None:
         gActiveUser = None
+    StateEngine.setStateByMultipleChoice("What would you like to do?", STATE_LOG_IN, STATE_EXIT)
+STATE_MAIN = State(stateMain, "Home")
 
-
-
-#   Main loop
-
-# ImportExportManager.printAllBookData()
-# ImportExportManager.printAllUserData()
-# DataManager.ChooseElementInDictOfTypeFrom("YO!", Book.getNoneBook())
-
+# Main
 ImportExportManager.setup()
-DataManager.ChooseElementInDictOfTypeFrom("what user?", User.getNoneUser())
+StateEngine.setState(STATE_MAIN)
