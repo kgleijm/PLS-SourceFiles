@@ -177,7 +177,7 @@ def getElementByMultipleChoice(question, input):
 # get values bij vararg list, first element in list is the value, additional elements are options for if the question should be a multiple choice
 # question will be recycled for every value
 # answers will be strings
-def getDictOfValuesByMultipleChoice(question, *inp_valueLists):
+def getDictOfValuesByValueList(question, *inp_valueLists):
     # dict to hold values
     valsDict = dict()
     # list to hold type of question
