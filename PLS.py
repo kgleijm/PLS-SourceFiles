@@ -13,6 +13,11 @@ gActiveUser = None
 gActiveBook = None
 gActiveBookItem = None
 
+# global methods
+def setActiveUser(inp_user):
+    global gActiveUser
+    gActiveUser = inp_user
+
 
 
 # classes
@@ -67,7 +72,7 @@ class ImportExportManager:
         # 1inp_gender, 2inp_language, 3inp_name, 4inp_surname, 5inp_adress, 6inp_postalCode, 76inp_city, 8inp_email, 9inp_username, 10inp_telephoneNumber
         for userElement in ImportExportManager.userCsv:
             # print('adding user: ' + str(userElement[9]))
-            DataManager.addByKey(userElement[9], User(userElement[1], userElement[2], userElement[3], userElement[4], userElement[5], userElement[6], userElement[7], userElement[8], userElement[9], userElement[10]))
+            DataManager.addByKey(userElement[9], User(userElement[1], userElement[2], userElement[3], userElement[4], userElement[5], userElement[6], userElement[7], userElement[8], userElement[9], userElement[10], User.ROLE_USER))
 
 
     @staticmethod
@@ -131,7 +136,7 @@ class User(cg.Element):
     ROLE_USER = 0
     ROLE_ADMIN = 1
 
-    def __init__(self, inp_gender, inp_language, inp_name, inp_surname, inp_adress, inp_postalCode, inp_city, inp_email, inp_username, inp_telephoneNumber):
+    def __init__(self, inp_gender, inp_language, inp_name, inp_surname, inp_adress, inp_postalCode, inp_city, inp_email, inp_username, inp_telephoneNumber, inp_role):
         super().__init__()
         self.gender = inp_gender
         self.language = inp_language
@@ -143,6 +148,7 @@ class User(cg.Element):
         self.email = inp_email
         self.username = inp_username
         self.telephoneNumber = inp_telephoneNumber
+        self.role = inp_role
 
     def getMPQlisting(self):
         return self.username + ' (' + self.name + ' ' + self.surname + ')'
@@ -158,13 +164,30 @@ class User(cg.Element):
 
     @staticmethod
     def getNoneUser():
-        return User(None, None, None, None, None, None, None, None, None, None)
+        return User(None, None, None, None, None, None, None, None, None, None, None)
 
 
 
 # states
 def stateLogin():
-    print("STATE_LOG_IN")
+    global gActiveUser
+    StateEngine.clearStateStack()
+    while True:
+        potentialUserName = cg.openQuestion('what is your username?')
+        # check if not exit
+        if potentialUserName is 'ERROR':
+            if gActiveUser:
+                StateEngine.setState(STATE_LOGGED_IN)
+            else:
+                StateEngine.setState(STATE_MAIN)
+            break
+        # check if user exists and handle accordingly
+        potentialUser = DataManager.findByKey(potentialUserName, User.getNoneUser())
+        if potentialUser:
+            setActiveUser(potentialUser)
+            StateEngine.setState(STATE_LOGGED_IN)
+        else:
+            print('No user with that name found')
 STATE_LOG_IN = State(stateLogin, 'Log In')
 
 
@@ -174,14 +197,10 @@ def stateExit():
 STATE_EXIT = State(stateExit, 'Exit')
 
 def stateCreateAccount():
-    mock = cg.getDictOfValuesByMultipleChoice(
-        'please enter your',
-        ['o', 'name'],
-        ['o', 'surname'],
-        ['o', 'street and house number']
-    )
+    global gActiveUser
 
-    values = cg.getDictOfValuesByMultipleChoice(
+    # gather values by user input
+    values = cg.getDictOfValuesByValueList(
         'please enter your',
         ['m', 'gender', '1Man', '2Woman', '3Other'],
         ['o', 'name'],
@@ -194,7 +213,33 @@ def stateCreateAccount():
         ['i', 'telephoneNumber']
         )
 
+    # generate user object and add to DataManager
+    newUser = User(values['gender'],
+          'Dutch',
+          values['name'],
+          values['surname'],
+          values['street and house number'],
+          values['postal code'],
+          values['city'],
+          values['email'],
+          values['userName'],
+          values['telephoneNumber'],
+          User.ROLE_USER)
+    DataManager.addByKey(values['userName'], newUser)
+
+    # new account creation
+    if gActiveUser is None:
+        gActiveUser = newUser
+    StateEngine.setState(STATE_LOGGED_IN)
+
 STATE_CREATE_ACCOUNT = State(stateCreateAccount, 'create an account')
+
+
+def stateLoggedIn():
+    print('state logged in')
+STATE_LOGGED_IN = State(stateLoggedIn, 'Go to Main menu')
+
+
 
 def stateMain():
     global gActiveUser

@@ -13,8 +13,10 @@ def openQuestionChecked(question, checks=None, negativeResponse=None):
     #   base output if no checks or negative response are needed
     if checks is None and negativeResponse is None:
         #   just return answer
-        print("\n" + question)
+        print("\n" + question + "\n type exit if you don't know")
         output = input()
+        if output == 'exit':
+            return 'ERROR'
         return output
 
     #   interpret question when checks are given
@@ -340,6 +342,10 @@ class StateEngine:
     def pushStateToStack(inp_state):
         StateEngine.stateStack.append(inp_state)
 
+    @staticmethod
+    def clearStateStack():
+        StateEngine.stateStack.clear()
+
     # starts the state engine
     @staticmethod
     def start():
@@ -368,14 +374,14 @@ class StateEngine:
 
     # prompt user with a multiple choice of state descriptions
     @staticmethod
-    def setStateByMultipleChoice(question, default, *states):
+    def setStateByMultipleChoice(question, default, *states, stacked=True):
         index = multipleChoice(question, [str(state[0]) + state[1].getDescription() for state in enumerate(states)])
         if index is not -1:
-            StateEngine.setState(states[index])
+            StateEngine.setState(states[index], stacked)
         elif default:
-            StateEngine.setState(default)
+            StateEngine.setState(default, False)
         else:
-            StateEngine.setState(StateEngine.getPreviousState())
+            StateEngine.setStateToPrevious()
 
 class DataManager:
     # dict that holds all dicts of registered objects accessed by key:
@@ -409,6 +415,15 @@ class DataManager:
         else:
             DataManager.lastUniqueKey += 1
             return str(DataManager.lastUniqueKey)
+
+    #findElementByKey
+    @staticmethod
+    def findByKey(inp_key, inp_element):
+        try:
+            return DataManager.typeDict[type(inp_element)][inp_key]
+        except Exception:
+            return None
+
 
     # returns ConsoleGui Element from dict
     @staticmethod
