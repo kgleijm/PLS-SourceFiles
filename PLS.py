@@ -10,13 +10,17 @@ State = StateEngine.State
 
 # globals
 gActiveUser = None
+def setActiveUser(inp_user):
+    global gActiveUser
+    gActiveUser = inp_user
+def getActiveUser():
+    return gActiveUser
+
 gActiveBook = None
 gActiveBookItem = None
 
 # global methods
-def setActiveUser(inp_user):
-    global gActiveUser
-    gActiveUser = inp_user
+
 
 
 
@@ -34,7 +38,7 @@ class ImportExportManager:
     alteredUserSetFilePath = root + "alteredUserSet.csv"
     userCsv = None
 
-    # TODO make json for author (obsolete)
+    # TODO make json for bookLoan
 
     # TODO make json for bookItem
 
@@ -44,6 +48,7 @@ class ImportExportManager:
     def setup():
         ImportExportManager.importData()
         ImportExportManager.processData()
+        DataManager.addByKey('admin', User('admin', 'admin', 'admin', 'admin', 'admin', 'admin', 'admin', 'admin', 'admin', 'admin', User.ROLE_ADMIN))
 
     @staticmethod
     def importData():
@@ -91,7 +96,7 @@ class ImportExportManager:
 
 
 class Book(cg.Element):
-    def __init__(self, inp_author, inp_title, inp_country, inp_language, inp_pages, inp_year):
+    def __init__(self, inp_author, inp_country, inp_language, inp_pages, inp_title, inp_year):
         super().__init__()
         self.author = inp_author
         self.title = inp_title
@@ -116,8 +121,23 @@ class Book(cg.Element):
     def getNoneBook():
         return Book(None, None, None, None, None, None)
 
-
+"""
 class BookItem(cg.Element):
+
+    def getMPQlisting(self):
+        pass
+
+    def list(self):
+        pass
+
+    def setKey(self, key):
+        pass
+
+    def getKey(self):
+        pass
+"""
+
+class BookLoan(cg.Element):
 
     def getMPQlisting(self):
         pass
@@ -167,6 +187,13 @@ class User(cg.Element):
         return User(None, None, None, None, None, None, None, None, None, None, None)
 
 
+""" state declaration template
+def state():
+    pass    
+STATE_ = State(state, 'desc')
+"""
+
+
 
 # states
 def stateLogin():
@@ -186,6 +213,7 @@ def stateLogin():
         if potentialUser:
             setActiveUser(potentialUser)
             StateEngine.setState(STATE_LOGGED_IN)
+            break
         else:
             print('No user with that name found')
 STATE_LOG_IN = State(stateLogin, 'Log In')
@@ -195,6 +223,7 @@ def stateExit():
     print("shutting down, Bye bye!")
     StateEngine.stop()
 STATE_EXIT = State(stateExit, 'Exit')
+
 
 def stateCreateAccount():
     global gActiveUser
@@ -231,12 +260,15 @@ def stateCreateAccount():
     if gActiveUser is None:
         gActiveUser = newUser
     StateEngine.setState(STATE_LOGGED_IN)
-
-STATE_CREATE_ACCOUNT = State(stateCreateAccount, 'create an account')
+STATE_CREATE_ACCOUNT = State(stateCreateAccount, 'Create an account')
 
 
 def stateLoggedIn():
-    print('state logged in')
+    print('Hi ' + gActiveUser.name + ', welcome To the PLS System')
+    if gActiveUser.role == User.ROLE_USER:
+        StateEngine.setStateByMultipleChoice('What would you like to do?', STATE_MAIN, STATE_SEARCH_BOOK, STATE_RETURN_BOOK)
+    else:
+        StateEngine.setStateByMultipleChoice('What would you like to do?', STATE_MAIN, STATE_ADD_BOOK, STATE_MAKE_BACKUP, STATE_RESTORE_FROM_BACKUP)
 STATE_LOGGED_IN = State(stateLoggedIn, 'Go to Main menu')
 
 
@@ -247,6 +279,51 @@ def stateMain():
         gActiveUser = None
     StateEngine.setStateByMultipleChoice("What would you like to do?", STATE_EXIT, STATE_LOG_IN, STATE_CREATE_ACCOUNT)
 STATE_MAIN = State(stateMain, "Home")
+
+
+# userStates
+def stateSearchBook():
+    pass
+STATE_SEARCH_BOOK = State(stateSearchBook, 'Search a book')
+
+def stateReturnBook():
+    pass
+STATE_RETURN_BOOK = State(stateReturnBook, 'Return a book')
+
+
+# adminStates
+def stateAddBook():
+    # gather values by user input
+    values = cg.getDictOfValuesByValueList(
+        'please enter the',
+        ['o', 'author'],
+        ['o', 'country'],
+        ['o', 'language'],
+        ['i', 'amount of pages'],
+        ['o', 'title'],
+        ['i', 'year']
+    )
+
+    # generate user object and add to DataManager
+    newBook = Book(values['author'],
+                   values['country'],
+                   values['language'],
+                   values['amount of pages'],
+                   values['title'],
+                   values['year'])
+    DataManager.addByKey(values['title'], newBook)
+    print("Added new book: " + values['title'])
+    StateEngine.setState(STATE_LOGGED_IN)
+STATE_ADD_BOOK = State(stateAddBook, 'Add a book')
+
+def stateMakeSystemBackup():
+    pass
+STATE_MAKE_BACKUP = State(stateMakeSystemBackup, 'Make a system backup')
+
+def stateRestoreSystemFromBackup():
+    pass
+STATE_RESTORE_FROM_BACKUP = State(stateRestoreSystemFromBackup, 'Restore system from backup')
+
 
 
 
