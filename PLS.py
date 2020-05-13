@@ -13,11 +13,11 @@ gActiveUser = None
 def setActiveUser(inp_user):
     global gActiveUser
     gActiveUser = inp_user
-def getActiveUser():
-    return gActiveUser
 
 gActiveBook = None
-gActiveBookItem = None
+def setActiveBook(inp_book):
+    global gActiveBook
+    gActiveBook = inp_book
 
 # global methods
 
@@ -38,11 +38,13 @@ class ImportExportManager:
     alteredUserSetFilePath = root + "alteredUserSet.csv"
     userCsv = None
 
+    dictOfAuthors = dict()
+    dictOfCountries = dict()
+    dictOfLanguages = dict()
+
     # TODO make json for bookLoan
 
-    # TODO make json for bookItem
-
-    # TODO make json for User
+    # TODO make csv for User
 
     @staticmethod
     def setup():
@@ -70,15 +72,18 @@ class ImportExportManager:
     def processData():
         print("loading books")
         for book in ImportExportManager.bookJson:
-            DataManager.addByKey(book['title'], Book(book['author'], book['title'], book['country'], book['language'], book['pages'], book['year']))
+            key = book['title']
+            DataManager.addByKey(key, Book(book['author'], book['country'], book['language'], book['pages'], book['title'], book['year']))
+            if not book['author'] in ImportExportManager.dictOfAuthors:
+                ImportExportManager.dictOfAuthors[book['author']] = True
+            if not book['country'] in ImportExportManager.dictOfCountries:
+                ImportExportManager.dictOfCountries[book['country']] = True
+            if not book['language'] in ImportExportManager.dictOfLanguages:
+                ImportExportManager.dictOfLanguages[book['language']] = True
 
         print("loading users")
-        # 0'20', 1'female', 2'Dutch', 3'GÃ¼lseren', 4'Willigenburg', 5'Dingspelstraat 28', 6'9461 JE', 7'Gieten', 8'GulserenWilligenburg@teleworm.us', 9'Ressoare', 10'06-92433659'
-        # 1inp_gender, 2inp_language, 3inp_name, 4inp_surname, 5inp_adress, 6inp_postalCode, 76inp_city, 8inp_email, 9inp_username, 10inp_telephoneNumber
         for userElement in ImportExportManager.userCsv:
-            # print('adding user: ' + str(userElement[9]))
             DataManager.addByKey(userElement[9], User(userElement[1], userElement[2], userElement[3], userElement[4], userElement[5], userElement[6], userElement[7], userElement[8], userElement[9], userElement[10], User.ROLE_USER))
-
 
     @staticmethod
     def printAllBookData():
@@ -94,9 +99,26 @@ class ImportExportManager:
         for user in ImportExportManager.userCsv:
             print('úser[2] should be: ' + user[2])
 
+    # used for multipleChoiceing keys
+    class keyElement(cg.Element):
+        def __init__(self, inp_Key):
+            super().__init__()
+
+        def getMPQlisting(self):
+            pass
+
+        def list(self):
+            pass
+
+        def setKey(self, key):
+            pass
+
+        def getKey(self):
+            pass
+
 
 class Book(cg.Element):
-    def __init__(self, inp_author, inp_country, inp_language, inp_pages, inp_title, inp_year):
+    def __init__(self, inp_author, inp_country, inp_language, inp_pages, inp_title, inp_year, inp_amount=1):
         super().__init__()
         self.author = inp_author
         self.title = inp_title
@@ -104,9 +126,10 @@ class Book(cg.Element):
         self.language = inp_language
         self.pages = inp_pages
         self.year = inp_year
+        self.amount = inp_amount
 
     def getMPQlisting(self):
-        return self.title + ' by ' + self.author
+        return str(self.title) + '       by ' + str(self.author) + '          amount available: ' + str(self.amount)
 
     def list(self):
         print(self.getMPQlisting())
@@ -117,39 +140,30 @@ class Book(cg.Element):
     def getKey(self):
         return self.key
 
+    def getAuthor(self):
+        return self.author
+
+    def getCountry(self):
+        return self.country
+
+    def getLanguage(self):
+        return self.language
+
+
+
+    def loanBook(self):
+        if self.amount > 0:
+            self.amount -= 1
+            return True
+        else:
+            return False
+
+    def returnBook(self):
+        self.amount += 1
+
     @staticmethod
     def getNoneBook():
         return Book(None, None, None, None, None, None)
-
-"""
-class BookItem(cg.Element):
-
-    def getMPQlisting(self):
-        pass
-
-    def list(self):
-        pass
-
-    def setKey(self, key):
-        pass
-
-    def getKey(self):
-        pass
-"""
-
-class BookLoan(cg.Element):
-
-    def getMPQlisting(self):
-        pass
-
-    def list(self):
-        pass
-
-    def setKey(self, key):
-        pass
-
-    def getKey(self):
-        pass
 
 
 class User(cg.Element):
@@ -186,6 +200,39 @@ class User(cg.Element):
     def getNoneUser():
         return User(None, None, None, None, None, None, None, None, None, None, None)
 
+
+
+"""
+class BookLoan(cg.Element):
+
+
+
+    def getMPQlisting(self):
+        pass
+
+    def list(self):
+        pass
+
+    def setKey(self, key):
+        pass
+
+    def getKey(self):
+        pass
+
+class BookItem(cg.Element):
+
+    def getMPQlisting(self):
+        pass
+
+    def list(self):
+        pass
+
+    def setKey(self, key):
+        pass
+
+    def getKey(self):
+        pass
+"""
 
 """ state declaration template
 def state():
@@ -268,10 +315,29 @@ def stateLoggedIn():
     if gActiveUser.role == User.ROLE_USER:
         StateEngine.setStateByMultipleChoice('What would you like to do?', STATE_MAIN, STATE_SEARCH_BOOK, STATE_RETURN_BOOK)
     else:
-        StateEngine.setStateByMultipleChoice('What would you like to do?', STATE_MAIN, STATE_ADD_BOOK, STATE_MAKE_BACKUP, STATE_RESTORE_FROM_BACKUP)
+        StateEngine.setStateByMultipleChoice('What would you like to do?', STATE_MAIN, STATE_ADD_BOOK, STATE_SEARCH_BOOK)
 STATE_LOGGED_IN = State(stateLoggedIn, 'Go to Main menu')
 
+def stateInteractWithBook():
+    print('Book info: ' +
+          '\nTitle: ' + gActiveBook.title +
+          '\nAuthor: ' + gActiveBook.author +
+          '\nCountry: ' + gActiveBook.country +
+          '\nLanguage: ' + gActiveBook.language +
+          '\nPages: ' + str(gActiveBook.pages) +
+          '\nYear: ' + str(gActiveBook.year) +
+          '\n'
+          )
 
+    StateEngine.setStateByMultipleChoice("what would you like to do?", STATE_LOGGED_IN, 'lloan this book', STATE_SEARCH_BOOK)
+
+
+
+STATE_INTERACT_WITH_BOOK = State(stateInteractWithBook, 'check out book')
+
+def stateMakeLoan():
+    pass
+STATE_ = State(stateMakeLoan(), 'desc')
 
 def stateMain():
     global gActiveUser
@@ -283,11 +349,97 @@ STATE_MAIN = State(stateMain, "Home")
 
 # userStates
 def stateSearchBook():
-    pass
+    global gActiveBook
+    activeBook = Book.getNoneBook()
+    ans = cg.multipleChoice("How would you like to find your book?", '0search all books', '1find a book by property')
+
+
+    if ans == -1:
+        StateEngine.setState(STATE_LOGGED_IN)
+    elif ans == 0:
+        # search all books
+        activeBook = DataManager.ChooseElementInDictOfTypeFrom('choose your book:', activeBook)
+    elif ans == 1:
+        findProperty = cg.multipleChoice('Which property would you like to search on?', 'aauthor', 'ccountry', 'llanguage')
+        if findProperty == -1:
+            return
+        elif findProperty == 0:  # find by author
+
+            # choose the author
+            dictkeys = list(ImportExportManager.dictOfAuthors.keys())
+            auths = list()
+            for i in range(len(dictkeys)):
+                auths.append(str(i) + dictkeys[i])
+            ans = cg.multipleChoice('by which author do you want to search?', auths)
+            auth = ''
+            if ans == -1:
+                return
+            else:
+                auth = ''.join([i for i in auths[ans] if not i.isdigit()])
+
+
+            #choose the book
+            bookList = list()
+            for book in DataManager.getDictOfType(Book.getNoneBook()).values():
+                # print("loop found author: " + book.getAuthor() + " checked against auth: " + auth)
+                if book.getAuthor() == auth:
+                    bookList.append(book)
+            activeBook = cg.getElementByMultipleChoice('which of this authors books would you like to see?', bookList)
+            print('Book: ' + activeBook.getMPQlisting())
+
+        elif findProperty == 1:  # find by country
+
+            # choose the country
+            dictkeys = list(ImportExportManager.dictOfCountries.keys())
+            countries = list()
+            for i in range(len(dictkeys)):
+                countries.append(str(i) + dictkeys[i])
+            ans = cg.multipleChoice('by which country do you want to search?', countries)
+            country = ''
+            if ans == -1:
+                return
+            else:
+                country = ''.join([i for i in countries[ans] if not i.isdigit()])
+
+            # choose the book
+            bookList = list()
+            for book in DataManager.getDictOfType(Book.getNoneBook()).values():
+                # print("loop found author: " + book.getAuthor() + " checked against auth: " + auth)
+                if book.getCountry() == country:
+                    bookList.append(book)
+            activeBook = cg.getElementByMultipleChoice('which of this county\'s books would you like to see?', bookList)
+
+        elif findProperty == 2:  # find by language
+
+            # choose the language
+            print("items: " + str(list(ImportExportManager.dictOfLanguages.keys())))
+            dictkeys = list(ImportExportManager.dictOfLanguages.keys())
+            languages = list()
+            for i in range(len(dictkeys)):
+                languages.append(str(i) + dictkeys[i])
+            ans = cg.multipleChoice('by which language do you want to search?', languages)
+            language = ''
+            if ans == -1:
+                return
+            else:
+                language = ''.join([i for i in languages[ans] if not i.isdigit()])
+
+            # choose the book
+            bookList = list()
+            for book in DataManager.getDictOfType(Book.getNoneBook()).values():
+                # print("loop found author: " + book.getAuthor() + " checked against auth: " + auth)
+                if book.getLanguage() == language:
+                    bookList.append(book)
+            activeBook = cg.getElementByMultipleChoice('which of the books in this language would you like to see?', bookList)
+            # find by language
+
+    gActiveBook = activeBook
+    StateEngine.setState(STATE_INTERACT_WITH_BOOK)
 STATE_SEARCH_BOOK = State(stateSearchBook, 'Search a book')
 
 def stateReturnBook():
     pass
+# TODO write stateReturnBook()
 STATE_RETURN_BOOK = State(stateReturnBook, 'Return a book')
 
 
@@ -316,6 +468,7 @@ def stateAddBook():
     StateEngine.setState(STATE_LOGGED_IN)
 STATE_ADD_BOOK = State(stateAddBook, 'Add a book')
 
+"""
 def stateMakeSystemBackup():
     pass
 STATE_MAKE_BACKUP = State(stateMakeSystemBackup, 'Make a system backup')
@@ -323,11 +476,13 @@ STATE_MAKE_BACKUP = State(stateMakeSystemBackup, 'Make a system backup')
 def stateRestoreSystemFromBackup():
     pass
 STATE_RESTORE_FROM_BACKUP = State(stateRestoreSystemFromBackup, 'Restore system from backup')
-
+"""
 
 
 
 # Main
 ImportExportManager.setup()
 StateEngine.setSafeState(STATE_MAIN)
+#TODO debug remove
+StateEngine.setState(STATE_SEARCH_BOOK)
 StateEngine.setState(STATE_MAIN)

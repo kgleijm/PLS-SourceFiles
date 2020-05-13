@@ -170,7 +170,7 @@ def getElementByMultipleChoice(question, input):
         answers = list()
         for i in range(len(input)):
             answers.append(str(i) + str(input[i].getMPQlisting()))
-        multipleChoice(question, answers)
+        return input[multipleChoice(question, answers)]
     elif type(input) is dict:
         return getElementByMultipleChoice(question, list(input.values()))
     else:
@@ -446,3 +446,10 @@ class DataManager:
             removeKey = element.getKey()
             inp_type = type(element)
             del DataManager.typeDict[inp_type][removeKey]
+
+    @staticmethod
+    def getDictOfType(inp_element):
+        try:
+            return DataManager.typeDict[type(inp_element)]
+        except Exception:
+            raise Exception('get Dict of type found no dict of type: ' + type(inp_element))
