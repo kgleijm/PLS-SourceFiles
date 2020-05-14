@@ -29,22 +29,13 @@ class ImportExportManager:
     setUp = False
 
     root = str(__file__).replace("PLS.py", "")
-    print(root)
+    # print(root)
     baseBookSetFilePath = root + "booksset1.json"
-    alteredBookSetFilePath = root + "alteredBooksSet.json"
-    bookJson = None
-
     baseUserSetFilePath = root + "FakeNameSet20.csv"
-    alteredUserSetFilePath = root + "alteredUserSet.csv"
-    userCsv = None
-
     dictOfAuthors = dict()
     dictOfCountries = dict()
     dictOfLanguages = dict()
 
-    # TODO make json for bookLoan
-
-    # TODO make csv for User
 
     @staticmethod
     def setup():
@@ -55,18 +46,10 @@ class ImportExportManager:
     @staticmethod
     def importData():
         IEM = ImportExportManager
+        IEM.bookJson = jcsv.getJsonFromPath(IEM.baseBookSetFilePath)
+        IEM.userCsv = jcsv.getCsvAsList(IEM.baseUserSetFilePath, ',')
 
-        # import altered book set if it exists import base set if it doesn't
-        if os.path.exists(IEM.alteredBookSetFilePath):
-            IEM.bookJson = jcsv.getJsonFromPath(IEM.alteredBookSetFilePath)
-        else:
-            IEM.bookJson = jcsv.getJsonFromPath(IEM.baseBookSetFilePath)
 
-        # import altered user set if it exists import base set if it doesn't
-        if os.path.exists(IEM.alteredUserSetFilePath):
-            IEM.userCsv = jcsv.getCsvAsList(IEM.alteredUserSetFilePath)
-        else:
-            IEM.userCsv = jcsv.getCsvAsList(IEM.baseUserSetFilePath, ',')
 
     @staticmethod
     def processData():
@@ -241,23 +224,6 @@ class BookLoan(cg.Element):
 
 
 
-"""
-
-
-class BookItem(cg.Element):
-
-    def getMPQlisting(self):
-        pass
-
-    def list(self):
-        pass
-
-    def setKey(self, key):
-        pass
-
-    def getKey(self):
-        pass
-"""
 
 """ state declaration template
 def state():
@@ -340,6 +306,7 @@ def stateLoggedIn():
     if gActiveUser.role == User.ROLE_USER:
         StateEngine.setStateByMultipleChoice('What would you like to do?', STATE_MAIN, STATE_SEARCH_BOOK, STATE_RETURN_BOOK)
     else:
+        #TODO try making return book or exclude if too time consuming
         StateEngine.setStateByMultipleChoice('What would you like to do?', STATE_MAIN, STATE_ADD_BOOK, STATE_SEARCH_BOOK)
 STATE_LOGGED_IN = State(stateLoggedIn, 'Go to Main menu')
 
@@ -350,6 +317,7 @@ def stateMakeLoan():
     # make the state work for both librarian and user
     if gActiveBook.isAvailable():
         if gActiveUser.role == User.ROLE_ADMIN:
+            # doesnt get called cause: nonUser #TODO either fix bug subject user becoming None or leave it out
             subjectUser = cg.getElementByMultipleChoice('for which user should the loan be made? ', User.getNoneUser())
         else:
             subjectUser = gActiveUser
@@ -486,10 +454,13 @@ def stateReturnBook():
         if loan.getName() == subjectUser.name:
             loanList.append(loan)
 
-    if cg.getElementByMultipleChoice('which book would you like to return?', loanList).returnLoan():
-        StateEngine.setStateByMultipleChoice('Book loan is succesfully made, what would you like to do next?', STATE_LOGGED_IN, STATE_SEARCH_BOOK, STATE_INTERACT_WITH_BOOK, STATE_RETURN_BOOK)
-    else:
+    rLoan = cg.getElementByMultipleChoice('which book would you like to return?', loanList)
+    if rLoan is None:
         print('something went wrong while returning a book')
+        StateEngine.setState(STATE_LOGGED_IN)
+    else:
+        rLoan.returnLoan()
+        StateEngine.setStateByMultipleChoice('Book is succesfully returned, what would you like to do next?', STATE_LOGGED_IN, STATE_SEARCH_BOOK, STATE_INTERACT_WITH_BOOK, STATE_RETURN_BOOK)
 STATE_RETURN_BOOK = State(stateReturnBook, 'Return a book')
 
 
@@ -517,17 +488,6 @@ def stateAddBook():
     print("Added new book: " + values['title'])
     StateEngine.setState(STATE_LOGGED_IN)
 STATE_ADD_BOOK = State(stateAddBook, 'Add a book')
-
-"""
-def stateMakeSystemBackup():
-    pass
-STATE_MAKE_BACKUP = State(stateMakeSystemBackup, 'Make a system backup')
-
-def stateRestoreSystemFromBackup():
-    pass
-STATE_RESTORE_FROM_BACKUP = State(stateRestoreSystemFromBackup, 'Restore system from backup')
-"""
-
 
 
 # Main
