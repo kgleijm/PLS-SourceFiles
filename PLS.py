@@ -19,17 +19,11 @@ def setActiveBook(inp_book):
     global gActiveBook
     gActiveBook = inp_book
 
-# global methods
-
-
-
-
 # classes
 class ImportExportManager:
     setUp = False
 
     root = str(__file__).replace("PLS.py", "")
-    # print(root)
     baseBookSetFilePath = root + "booksset1.json"
     baseUserSetFilePath = root + "FakeNameSet20.csv"
     dictOfAuthors = dict()
@@ -48,8 +42,6 @@ class ImportExportManager:
         IEM = ImportExportManager
         IEM.bookJson = jcsv.getJsonFromPath(IEM.baseBookSetFilePath)
         IEM.userCsv = jcsv.getCsvAsList(IEM.baseUserSetFilePath, ',')
-
-
 
     @staticmethod
     def processData():
@@ -82,7 +74,7 @@ class ImportExportManager:
         for user in ImportExportManager.userCsv:
             print('úser[2] should be: ' + user[2])
 
-    # used for multipleChoiceing keys
+    # used for multipleChoice'ing keys
     class keyElement(cg.Element):
         def __init__(self, inp_Key):
             super().__init__()
@@ -222,16 +214,11 @@ class BookLoan(cg.Element):
     def getNoneLoan():
         return BookLoan(User.getNoneUser(), Book.getNoneBook())
 
-
-
-
 """ state declaration template
 def state():
     pass    
 STATE_ = State(state, 'desc')
 """
-
-
 
 # states
 def stateLogin():
@@ -306,8 +293,7 @@ def stateLoggedIn():
     if gActiveUser.role == User.ROLE_USER:
         StateEngine.setStateByMultipleChoice('What would you like to do?', STATE_MAIN, STATE_SEARCH_BOOK, STATE_RETURN_BOOK)
     else:
-        #TODO try making return book or exclude if too time consuming
-        StateEngine.setStateByMultipleChoice('What would you like to do?', STATE_MAIN, STATE_ADD_BOOK, STATE_SEARCH_BOOK)
+        StateEngine.setStateByMultipleChoice('What would you like to do?', STATE_MAIN, STATE_ADD_BOOK, STATE_SEARCH_BOOK, STATE_DISPLAY_LOANS)
 STATE_LOGGED_IN = State(stateLoggedIn, 'Go to Main menu')
 
 
@@ -317,7 +303,6 @@ def stateMakeLoan():
     # make the state work for both librarian and user
     if gActiveBook.isAvailable():
         if gActiveUser.role == User.ROLE_ADMIN:
-            # doesnt get called cause: nonUser #TODO either fix bug subject user becoming None or leave it out
             subjectUser = cg.getElementByMultipleChoice('for which user should the loan be made? ', User.getNoneUser())
         else:
             subjectUser = gActiveUser
@@ -330,6 +315,7 @@ STATE_MAKE_LOAN = State(stateMakeLoan, 'Make a book loan')
 
 
 def stateInteractWithBook():
+    global gActiveUser
     print('Book info: ' +
           '\nTitle: ' + gActiveBook.title +
           '\nAuthor: ' + gActiveBook.author +
@@ -339,8 +325,20 @@ def stateInteractWithBook():
           '\nYear: ' + str(gActiveBook.year) +
           '\n'
           )
-    StateEngine.setStateByMultipleChoice("what would you like to do?", STATE_LOGGED_IN, STATE_MAKE_LOAN, STATE_SEARCH_BOOK)
+    if gActiveUser.role == User.ROLE_USER:
+        StateEngine.setStateByMultipleChoice("what would you like to do?", STATE_LOGGED_IN, STATE_MAKE_LOAN, STATE_SEARCH_BOOK)
+    else:
+        StateEngine.setStateByMultipleChoice("what would you like to do?", STATE_LOGGED_IN, STATE_ADD_BOOK, STATE_SEARCH_BOOK)
 STATE_INTERACT_WITH_BOOK = State(stateInteractWithBook, 'check out book info')
+
+
+def stateDisplayAllBookLoans():
+    print('All current loans:')
+    loanList = DataManager.getDictOfType(BookLoan.getNoneLoan()).values()
+    for loan in loanList:
+        loan.list()
+    StateEngine.setState(STATE_LOGGED_IN)
+STATE_DISPLAY_LOANS = State(stateDisplayAllBookLoans, 'Display current outstanding loans')
 
 
 def stateMain():
@@ -351,7 +349,6 @@ def stateMain():
 STATE_MAIN = State(stateMain, "Home")
 
 
-# userStates
 def stateSearchBook():
     global gActiveBook
     activeBook = Book.getNoneBook()
@@ -441,6 +438,7 @@ def stateSearchBook():
     StateEngine.setState(STATE_INTERACT_WITH_BOOK)
 STATE_SEARCH_BOOK = State(stateSearchBook, 'Search a book')
 
+
 def stateReturnBook():
     global gActiveUser
     if gActiveUser.role == User.ROLE_ADMIN:
@@ -464,7 +462,6 @@ def stateReturnBook():
 STATE_RETURN_BOOK = State(stateReturnBook, 'Return a book')
 
 
-# adminStates
 def stateAddBook():
     # gather values by user input
     values = cg.getDictOfValuesByValueList(
@@ -488,6 +485,7 @@ def stateAddBook():
     print("Added new book: " + values['title'])
     StateEngine.setState(STATE_LOGGED_IN)
 STATE_ADD_BOOK = State(stateAddBook, 'Add a book')
+
 
 
 # Main
