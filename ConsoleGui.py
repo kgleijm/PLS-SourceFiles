@@ -146,7 +146,6 @@ def listDict(inp_dict):
     for item in inp_dict.items():
         print(str(item[0]) + ': ' + str(item[1]))
 
-
 class Element(ABC):
 
     def __init__(self):
@@ -395,7 +394,7 @@ class DataManager:
         if inp_type in DataManager.typeDict:
             DataManager.typeDict[inp_type][str(key)] = inp_element
         else:
-            print('data type: ' + str(inp_type) + 'added to DataManager')
+            # print('data type: ' + str(inp_type) + 'added to DataManager')
             DataManager.typeDict[inp_type] = dict()
             DataManager.typeDict[inp_type][str(key)] = inp_element
         inp_element.setKey(str(key))
@@ -446,6 +445,15 @@ class DataManager:
             removeKey = element.getKey()
             inp_type = type(element)
             del DataManager.typeDict[inp_type][removeKey]
+            return True
+
+    @staticmethod
+    def removeWithKeyFromType(key, inp_element):
+        try:
+            del DataManager.typeDict[type(inp_element)][key]
+            return True
+        except Exception:
+            raise Exception('Something went wrong in removing this element from data')
 
     @staticmethod
     def getDictOfType(inp_element):

@@ -73,7 +73,7 @@ class ImportExportManager:
         print("loading books")
         for book in ImportExportManager.bookJson:
             key = book['title']
-            DataManager.addByKey(key, Book(book['author'], book['country'], book['language'], book['pages'], book['title'], book['year']))
+            DataManager.addByKey(key, Book(book['author'], book['country'], book['language'], book['pages'], book['title'], book['year'], inp_amount=1))
             if not book['author'] in ImportExportManager.dictOfAuthors:
                 ImportExportManager.dictOfAuthors[book['author']] = True
             if not book['country'] in ImportExportManager.dictOfCountries:
@@ -149,7 +149,8 @@ class Book(cg.Element):
     def getLanguage(self):
         return self.language
 
-
+    def isAvailable(self):
+        return self.amount > 0
 
     def loanBook(self):
         if self.amount > 0:
@@ -163,7 +164,7 @@ class Book(cg.Element):
 
     @staticmethod
     def getNoneBook():
-        return Book(None, None, None, None, None, None)
+        return Book(None, None, None, None, 'None', None)
 
 
 class User(cg.Element):
@@ -198,26 +199,50 @@ class User(cg.Element):
 
     @staticmethod
     def getNoneUser():
-        return User(None, None, None, None, None, None, None, None, None, None, None)
+        return User(None, None, 'None', None, None, None, None, None, None, None, None)
+
+
+class BookLoan(cg.Element):
+
+    def __init__(self, inp_user, inp_book):
+        super().__init__()
+        key = inp_user.name + inp_book.title
+        self.user = inp_user
+        self.book = inp_book
+        self.book.loanBook()
+        DataManager.addByKey(key, self)
+        self.setKey(key)
+
+    def getMPQlisting(self):
+        return self.user.name + ' loaned ' + self.book.title
+
+    def list(self):
+        print(self.getMPQlisting())
+
+    def setKey(self, key):
+        self.key = key
+
+    def getKey(self):
+        return self.key
+
+    def getName(self):
+        return self.user.name
+
+    def returnLoan(self):
+        self.book.returnBook()
+        DataManager.removeWithKeyFromType(self.key, BookLoan.getNoneLoan())
+
+
+
+
+    @staticmethod
+    def getNoneLoan():
+        return BookLoan(User.getNoneUser(), Book.getNoneBook())
 
 
 
 """
-class BookLoan(cg.Element):
 
-
-
-    def getMPQlisting(self):
-        pass
-
-    def list(self):
-        pass
-
-    def setKey(self, key):
-        pass
-
-    def getKey(self):
-        pass
 
 class BookItem(cg.Element):
 
@@ -318,6 +343,24 @@ def stateLoggedIn():
         StateEngine.setStateByMultipleChoice('What would you like to do?', STATE_MAIN, STATE_ADD_BOOK, STATE_SEARCH_BOOK)
 STATE_LOGGED_IN = State(stateLoggedIn, 'Go to Main menu')
 
+
+def stateMakeLoan():
+    global gActiveUser, gActiveBook
+
+    # make the state work for both librarian and user
+    if gActiveBook.isAvailable():
+        if gActiveUser.role == User.ROLE_ADMIN:
+            subjectUser = cg.getElementByMultipleChoice('for which user should the loan be made? ', User.getNoneUser())
+        else:
+            subjectUser = gActiveUser
+        # make a bookLoanItem with key: user + title
+        BookLoan(subjectUser, gActiveBook)
+        StateEngine.setStateByMultipleChoice('Book loan is succesfully made, what would you like to do next?', STATE_LOGGED_IN, STATE_SEARCH_BOOK, STATE_INTERACT_WITH_BOOK, STATE_RETURN_BOOK)
+    else:
+        StateEngine.setStateByMultipleChoice("this book is unavailable, what would you like to do?", STATE_LOGGED_IN, STATE_SEARCH_BOOK, STATE_INTERACT_WITH_BOOK)
+STATE_MAKE_LOAN = State(stateMakeLoan, 'Make a book loan')
+
+
 def stateInteractWithBook():
     print('Book info: ' +
           '\nTitle: ' + gActiveBook.title +
@@ -328,16 +371,9 @@ def stateInteractWithBook():
           '\nYear: ' + str(gActiveBook.year) +
           '\n'
           )
+    StateEngine.setStateByMultipleChoice("what would you like to do?", STATE_LOGGED_IN, STATE_MAKE_LOAN, STATE_SEARCH_BOOK)
+STATE_INTERACT_WITH_BOOK = State(stateInteractWithBook, 'check out book info')
 
-    StateEngine.setStateByMultipleChoice("what would you like to do?", STATE_LOGGED_IN, 'lloan this book', STATE_SEARCH_BOOK)
-
-
-
-STATE_INTERACT_WITH_BOOK = State(stateInteractWithBook, 'check out book')
-
-def stateMakeLoan():
-    pass
-STATE_ = State(stateMakeLoan(), 'desc')
 
 def stateMain():
     global gActiveUser
@@ -438,8 +474,22 @@ def stateSearchBook():
 STATE_SEARCH_BOOK = State(stateSearchBook, 'Search a book')
 
 def stateReturnBook():
-    pass
-# TODO write stateReturnBook()
+    global gActiveUser
+    if gActiveUser.role == User.ROLE_ADMIN:
+        subjectUser = cg.getElementByMultipleChoice('for which user should a return be made? ', User.getNoneUser())
+    else:
+        subjectUser = gActiveUser
+
+    # get all loans for subjectUser
+    loanList = list()
+    for loan in DataManager.getDictOfType(BookLoan.getNoneLoan()).values():
+        if loan.getName() == subjectUser.name:
+            loanList.append(loan)
+
+    if cg.getElementByMultipleChoice('which book would you like to return?', loanList).returnLoan():
+        StateEngine.setStateByMultipleChoice('Book loan is succesfully made, what would you like to do next?', STATE_LOGGED_IN, STATE_SEARCH_BOOK, STATE_INTERACT_WITH_BOOK, STATE_RETURN_BOOK)
+    else:
+        print('something went wrong while returning a book')
 STATE_RETURN_BOOK = State(stateReturnBook, 'Return a book')
 
 
@@ -483,6 +533,4 @@ STATE_RESTORE_FROM_BACKUP = State(stateRestoreSystemFromBackup, 'Restore system 
 # Main
 ImportExportManager.setup()
 StateEngine.setSafeState(STATE_MAIN)
-#TODO debug remove
-StateEngine.setState(STATE_SEARCH_BOOK)
 StateEngine.setState(STATE_MAIN)
