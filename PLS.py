@@ -74,9 +74,6 @@ class ImportExportManager:
         for user in ImportExportManager.userCsv:
             print('úser[2] should be: ' + user[2])
 
-
-
-
 class Book(cg.Element):
     def __init__(self, inp_author, inp_country, inp_language, inp_pages, inp_title, inp_year, inp_amount=1):
         super().__init__()
@@ -126,7 +123,6 @@ class Book(cg.Element):
     def getNoneBook():
         return Book(None, None, None, None, 'None', None)
 
-
 class User(cg.Element):
     ROLE_USER = 0
     ROLE_ADMIN = 1
@@ -160,7 +156,6 @@ class User(cg.Element):
     @staticmethod
     def getNoneUser():
         return User(None, None, 'None', None, None, None, None, None, None, None, None)
-
 
 class BookLoan(cg.Element):
 
@@ -198,12 +193,6 @@ class BookLoan(cg.Element):
     @staticmethod
     def getNoneLoan():
         return BookLoan(User.getNoneUser(), Book.getNoneBook())
-
-""" state declaration template
-def state():
-    pass    
-STATE_ = State(state, 'desc')
-"""
 
 # states
 def stateLogin():
@@ -470,7 +459,6 @@ def stateAddBook():
     print("Added new book: " + values['title'])
     StateEngine.setState(STATE_LOGGED_IN)
 STATE_ADD_BOOK = State(stateAddBook, 'Add a book')
-
 
 
 # Main
