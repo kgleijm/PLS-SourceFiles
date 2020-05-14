@@ -74,22 +74,7 @@ class ImportExportManager:
         for user in ImportExportManager.userCsv:
             print('úser[2] should be: ' + user[2])
 
-    # used for multipleChoice'ing keys
-    class keyElement(cg.Element):
-        def __init__(self, inp_Key):
-            super().__init__()
 
-        def getMPQlisting(self):
-            pass
-
-        def list(self):
-            pass
-
-        def setKey(self, key):
-            pass
-
-        def getKey(self):
-            pass
 
 
 class Book(cg.Element):
